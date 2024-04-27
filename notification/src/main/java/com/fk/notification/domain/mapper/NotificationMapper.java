@@ -18,7 +18,7 @@ public class NotificationMapper implements Function<CreateNotificationRecord, No
         .userId(t.userId())
         .message(t.message())
         .title(t.title())
-        .read(false)
+        .read(Boolean.valueOf(Boolean.FALSE))
         .timestamp(new Date())
         .build();
   }

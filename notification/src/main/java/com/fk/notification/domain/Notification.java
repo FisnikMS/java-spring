@@ -9,10 +9,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Document
+@Document(collection = "notifications")
+@NoArgsConstructor
 @Getter
 @Setter
-@NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class Notification {
@@ -22,5 +22,5 @@ public class Notification {
   private String title;
   private String message;
   private Date timestamp;
-  private boolean read;
+  private Boolean read;
 }
