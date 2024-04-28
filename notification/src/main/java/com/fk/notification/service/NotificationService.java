@@ -10,13 +10,18 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.TextCriteria;
+import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.stereotype.Service;
 
 import com.fk.notification.domain.Notification;
+import com.fk.notification.domain.mapper.NotificationUpdateMapper;
+import com.fk.notification.domain.records.UpdateNotificationRecord;
 import com.fk.notification.repository.NotificationRepository;
 
 @Service
@@ -32,21 +37,31 @@ public class NotificationService {
     return notificationRepository.insert(notification);
   }
 
-  public List<Notification> getNotificationsById(String userId) {
-    return this.notificationRepository.getNotificationsById(userId);
+  public Notification updateNotification(UpdateNotificationRecord updateNotification) {
+    Optional<Notification> notification = notificationRepository.findById(updateNotification.id());
+
+    if (notification.isPresent()) {
+      return notificationRepository.save(new NotificationUpdateMapper(notification.get()).apply(updateNotification));
+    }
+
+    System.out.println("Could'nt find notification with id: " + updateNotification.id());
+
+    return new Notification();
+
   }
 
-  public List<Notification> search(
-      Optional<String> userId,
-      Optional<String> title,
-      Optional<String> message,
-      Optional<Boolean> read,
-      Optional<String> startDate,
-      Optional<String> endDate) {
-    Query query = new Query();
-    List<Criteria> criteria = new ArrayList<>();
+  public List<Notification> getNotificationsById(String userId) {
+    return notificationRepository.getNotificationsById(userId);
+  }
 
-    DateTimeFormatter formatter = new DateTimeFormatterBuilder()
+  public List<Notification> deleteNotificationsById(List<String> ids) {
+    List<Notification> notifications = notificationRepository.findAllById(ids);
+    notificationRepository.deleteAllById(ids);
+    return notifications;
+  }
+
+  private DateTimeFormatter createDateTimeFormatter(long defaultHourOfDay, long defaultOffsetSeconds) {
+    return new DateTimeFormatterBuilder()
         .append(DateTimeFormatter.ISO_LOCAL_DATE)
         .optionalStart()
         .parseCaseInsensitive()
@@ -54,20 +69,26 @@ public class NotificationService {
         .append(DateTimeFormatter.ISO_LOCAL_TIME)
         .optionalEnd()
         .appendPattern("[xx]")
-        .parseDefaulting(ChronoField.HOUR_OF_DAY, 0)
-        .parseDefaulting(ChronoField.OFFSET_SECONDS, 0)
+        .parseDefaulting(ChronoField.HOUR_OF_DAY, defaultHourOfDay)
+        .parseDefaulting(ChronoField.OFFSET_SECONDS, defaultOffsetSeconds)
         .toFormatter();
+
+  }
+
+  public Page<Notification> getAll(
+      Optional<String> userId,
+      Optional<Boolean> read,
+      Optional<String> startDate,
+      Optional<String> endDate,
+      Integer page,
+      Integer size) {
+    Pageable pageable = PageRequest.of(page, size);
+    Query query = new Query().with(pageable);
+    List<Criteria> criteria = new ArrayList<>();
+    DateTimeFormatter formatter = createDateTimeFormatter(0, 0);
 
     userId.ifPresent(u -> {
       criteria.add(Criteria.where("userId").is(u));
-    });
-
-    title.ifPresent(t -> {
-      criteria.add(Criteria.where("title").is(TextCriteria.forDefaultLanguage().matchingAny(t)));
-    });
-
-    message.ifPresent(m -> {
-      criteria.add(Criteria.where("message").is(TextCriteria.forDefaultLanguage().matchingAny(m)));
     });
 
     read.ifPresent(r -> {
@@ -75,31 +96,25 @@ public class NotificationService {
     });
 
     startDate.ifPresent(sd -> {
-      try {
-        Instant start = OffsetDateTime.parse(sd, formatter).toInstant();
-        System.out.println(start);
-        Criteria startDateCriteria = Criteria.where("timestamp").gte(start);
-        criteria.add(startDateCriteria);
-      } catch (Exception e) {
-        System.out.println("catched error");
-      }
+      Instant start = OffsetDateTime.parse(sd, formatter).toInstant();
+      Criteria startDateCriteria = Criteria.where("createdAt").gte(start);
+      criteria.add(startDateCriteria);
     });
+
     endDate.ifPresent(ed -> {
-      try {
-        Instant end =  OffsetDateTime.parse(ed, formatter).toInstant();
-        Criteria endDateCriteria = Criteria.where("timestamp").lte(end);
-        criteria.add(endDateCriteria);
-      } catch (Exception e) {
-        System.out.println("catched error");
-      }
+      DateTimeFormatter endFormatter = createDateTimeFormatter(23, 60);
+      Instant end = OffsetDateTime.parse(ed, endFormatter).toInstant();
+      Criteria endDateCriteria = Criteria.where("createdAt").lte(end);
+      criteria.add(endDateCriteria);
     });
 
     if (!criteria.isEmpty()) {
       query.addCriteria(new Criteria().andOperator(criteria));
     }
 
-    return mongoTemplate.find(query, Notification.class);
-
+    return PageableExecutionUtils.getPage(mongoTemplate.find(query, Notification.class),
+        pageable,
+        () -> mongoTemplate.count(query.skip(0).limit(0), Notification.class));
   }
 
 }

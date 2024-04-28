@@ -7,9 +7,10 @@ import org.springframework.stereotype.Service;
 
 import com.fk.notification.domain.Notification;
 import com.fk.notification.domain.records.CreateNotificationRecord;
+import com.fk.notification.domain.records.UpdateNotificationRecord;
 
 @Service
-public class NotificationMapper implements Function<CreateNotificationRecord, Notification> {
+public class NotificationCreationMapper implements Function<CreateNotificationRecord, Notification> {
 
   @Override
   public Notification apply(CreateNotificationRecord t) {
@@ -19,8 +20,8 @@ public class NotificationMapper implements Function<CreateNotificationRecord, No
         .message(t.message())
         .title(t.title())
         .read(Boolean.valueOf(Boolean.FALSE))
-        .timestamp(new Date())
+        .createdAt(new Date())
+        .updatedAt(new Date())
         .build();
   }
-
 }
