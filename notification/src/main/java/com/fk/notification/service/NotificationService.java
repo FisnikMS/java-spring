@@ -1,15 +1,20 @@
 package com.fk.notification.service;
 
+import java.io.IOException;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoField;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ScheduledFuture;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -17,37 +22,104 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.support.PageableExecutionUtils;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.support.PeriodicTrigger;
 import org.springframework.stereotype.Service;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter.SseEventBuilder;
 
 import com.fk.notification.domain.Notification;
 import com.fk.notification.domain.mapper.NotificationUpdateMapper;
 import com.fk.notification.domain.records.UpdateNotificationRecord;
+import com.fk.notification.exception.EntityNotFoundException;
 import com.fk.notification.repository.NotificationRepository;
 
 @Service
 public class NotificationService {
 
-  @Autowired
   private NotificationRepository notificationRepository;
+  private MongoTemplate mongoTemplate;
+  private TaskScheduler taskScheduler;
+  private ScheduledFuture<?> scheduledFuture;
+  private HashMap<String, SseEmitter> emitters;
+
+ // @Value("${data.healthDuration:#{null}}")
+ // private Long healthDuration;
+ // @Value("${data.sseTimeout:#{null}}")
+ // private Long sseTimeout;
 
   @Autowired
-  private MongoTemplate mongoTemplate;
+  public NotificationService(NotificationRepository notificationRepository, MongoTemplate mongoTemplate,
+      TaskScheduler taskScheduler) {
+    this.notificationRepository = notificationRepository;
+    this.mongoTemplate = mongoTemplate;
+    this.taskScheduler = taskScheduler;
+    this.toggleScheduledTask(true);
+    emitters = new HashMap<>();
+  }
+
+  private void health() {
+    emitters.forEach((k, e) -> {
+      try {
+        e.send(SseEmitter.event().name("healthcheck").data("I'm alive."));
+      } catch (IOException ex) {
+        removeEmitter(k);
+      }
+    });
+  }
+
+  private void removeEmitter(String key) {
+    emitters.remove(key);
+    if (emitters.keySet().isEmpty()) {
+      toggleScheduledTask(false);
+    }
+  }
+
+  private void toggleScheduledTask(boolean enable) {
+    if (enable && scheduledFuture == null || scheduledFuture.isCancelled()) {
+      scheduledFuture = taskScheduler.schedule(this::health,
+          new PeriodicTrigger(Duration.ofMillis(1000 * 60 * 5)));
+    } else if (!enable && scheduledFuture != null && !scheduledFuture.isCancelled()) {
+      scheduledFuture.cancel(true);
+    }
+  }
+
+  public SseEmitter sse(String userId) {
+    SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
+    emitters.put(userId, emitter);
+
+    emitter.onTimeout(() -> {
+      removeEmitter(userId);
+    });
+    emitter.onCompletion(() -> {
+      removeEmitter(userId);
+    });
+    toggleScheduledTask(true);
+    return emitter;
+  }
 
   public Notification insert(Notification notification) {
+    SseEmitter emitter = emitters.get(notification.getUserId());
+    if (emitter != null) {
+      try {
+        emitter.send(SseEmitter.event().name("data").data(notification));
+      } catch (IOException e) {
+        // @TODO logging.
+        System.out.println("Log..");
+      }
+    }
     return notificationRepository.insert(notification);
   }
 
-  public Notification updateNotification(UpdateNotificationRecord updateNotification) {
+  public Notification updateNotification(UpdateNotificationRecord updateNotification) throws EntityNotFoundException {
     Optional<Notification> notification = notificationRepository.findById(updateNotification.id());
 
     if (notification.isPresent()) {
       return notificationRepository.save(new NotificationUpdateMapper(notification.get()).apply(updateNotification));
     }
 
-    System.out.println("Could'nt find notification with id: " + updateNotification.id());
-
-    return new Notification();
-
+    throw new EntityNotFoundException("Couldn't find notification with id: " + updateNotification.id());
   }
 
   public List<Notification> getNotificationsById(String userId) {

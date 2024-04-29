@@ -1,12 +1,25 @@
 package com.fk.notification.controller;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ScheduledFuture;
+
+import java.time.Duration;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.http.MediaType;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.scheduling.Trigger;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.scheduling.concurrent.ConcurrentTaskScheduler;
+import org.springframework.scheduling.config.FixedRateTask;
+import org.springframework.scheduling.support.PeriodicTrigger;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,11 +29,13 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import com.fk.notification.domain.Notification;
 import com.fk.notification.domain.mapper.NotificationCreationMapper;
 import com.fk.notification.domain.records.CreateNotificationRecord;
 import com.fk.notification.domain.records.UpdateNotificationRecord;
+import com.fk.notification.exception.EntityNotFoundException;
 import com.fk.notification.service.NotificationService;
 
 import jakarta.validation.Valid;
@@ -29,15 +44,24 @@ import jakarta.validation.Valid;
 @RequestMapping("api/notifications")
 public class NotificationController {
 
-  @Autowired
   private NotificationService notificationService;
+
+  @Autowired
+  public NotificationController(NotificationService notificationService) {
+    this.notificationService = notificationService;
+  }
+
+  @GetMapping(path = "/subscribe/{userId}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+  public SseEmitter sse(@PathVariable("userId") String userId) {
+    return notificationService.sse(userId);
+  }
 
   @GetMapping("/{userId}")
   public List<Notification> getNotificationsById(@PathVariable("userId") String userId) {
     return this.notificationService.getNotificationsById(userId);
   }
 
-  @GetMapping("")
+  @GetMapping()
   public Page<Notification> getAll(
       @RequestParam(required = false, name = "userId") Optional<String> userId,
       @RequestParam(required = false, name = "read") Optional<Boolean> read,
@@ -55,7 +79,8 @@ public class NotificationController {
   }
 
   @PutMapping()
-  public Notification updateNotification(@Valid @RequestBody UpdateNotificationRecord updateNotificationRecord){
+  public Notification updateNotification(@Valid @RequestBody UpdateNotificationRecord updateNotificationRecord)
+      throws EntityNotFoundException {
     return this.notificationService.updateNotification(updateNotificationRecord);
   }
 
