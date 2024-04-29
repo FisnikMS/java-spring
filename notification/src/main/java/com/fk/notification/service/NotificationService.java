@@ -77,7 +77,7 @@ public class NotificationService {
   }
 
   private void toggleScheduledTask(boolean enable) {
-    if (enable && scheduledFuture == null || scheduledFuture.isCancelled()) {
+    if (enable && (scheduledFuture == null || scheduledFuture.isCancelled())) {
       scheduledFuture = taskScheduler.schedule(this::health,
           new PeriodicTrigger(Duration.ofMillis(1000 * 60 * 5)));
     } else if (!enable && scheduledFuture != null && !scheduledFuture.isCancelled()) {
