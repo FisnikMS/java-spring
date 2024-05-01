@@ -1,0 +1,22 @@
+version: '3.9'
+services:
+  postgres_db: 
+    image: postgres:16.2
+    restart: unless-stopped
+    ports: 
+     - 5444:5432
+    volumes: 
+      - ~/apps/postgres:/var/lib/postgresql_db/data
+    environment:
+      POSTGRES_DB: application_db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin_password
+    ports:
+      - 5050:80
+
