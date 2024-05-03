@@ -36,6 +36,7 @@ public class InstallationService {
     Optional<Application> application = this.applicationService.getById(applicationId);
     if (application.isPresent()) {
       installation.setApplication(application.get());
+      System.out.println(installation);
       return this.installationRepository.save(installation);
     }
     throw new EntityNotFoundException("Couldn't find application with id: " +

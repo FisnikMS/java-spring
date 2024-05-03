@@ -3,6 +3,10 @@ package com.fk.application.domain;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fk.application.domain.installation.Installation;
+
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
@@ -13,6 +17,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -25,7 +30,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Builder
-@Table(name = "application")
+@Table(name = "applications")
 public class Application {
 
   @Id
@@ -36,9 +41,13 @@ public class Application {
   private String title;
   private String description;
 
-  @ElementCollection(fetch = FetchType.LAZY)
+  @ElementCollection(fetch = FetchType.EAGER)
   @CollectionTable(name = "configuration", joinColumns = @JoinColumn(name = "application_id", nullable = false), uniqueConstraints = @UniqueConstraint(columnNames = {
       "application_id" }))
   private Set<RouteConfiguration> routeConfigurations = new HashSet<>();
+
+  @JsonIgnore
+  @OneToMany(mappedBy = "application", fetch = FetchType.EAGER , cascade = CascadeType.ALL)
+  private Set<Installation> installations = new HashSet<>();
 
 }

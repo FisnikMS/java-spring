@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ScheduledFuture;
 
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -29,11 +30,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter.SseEventBuilder;
 
+import com.fk.notification.NotificationApplication;
 import com.fk.notification.domain.Notification;
 import com.fk.notification.domain.mapper.NotificationUpdateMapper;
 import com.fk.notification.domain.records.UpdateNotificationRecord;
 import com.fk.notification.exception.EntityNotFoundException;
+import com.fk.notification.config.rabbitMQ.RabbitConfiguration;
 import com.fk.notification.repository.NotificationRepository;
+import com.fk.notification.config.rabbitMQ.domain.NotificationCreationEvent;
 
 @Service
 public class NotificationService {
@@ -44,10 +48,10 @@ public class NotificationService {
   private ScheduledFuture<?> scheduledFuture;
   private HashMap<String, SseEmitter> emitters;
 
- // @Value("${data.healthDuration:#{null}}")
- // private Long healthDuration;
- // @Value("${data.sseTimeout:#{null}}")
- // private Long sseTimeout;
+  // @Value("${data.healthDuration:#{null}}")
+  // private Long healthDuration;
+  // @Value("${data.sseTimeout:#{null}}")
+  // private Long sseTimeout;
 
   @Autowired
   public NotificationService(NotificationRepository notificationRepository, MongoTemplate mongoTemplate,
@@ -57,6 +61,19 @@ public class NotificationService {
     this.taskScheduler = taskScheduler;
     this.toggleScheduledTask(true);
     emitters = new HashMap<>();
+  }
+
+  @RabbitListener(queues = RabbitConfiguration.queueName)
+  private void receiveNotifications(NotificationCreationEvent event) {
+    event.getUserIds().stream().forEach(userId -> {
+      this.insert(Notification
+          .builder()
+          .userId(userId)
+          .title(event.getTitle())
+          .message(event.getMessage())
+          .read(false)
+          .build());
+    });
   }
 
   private void health() {

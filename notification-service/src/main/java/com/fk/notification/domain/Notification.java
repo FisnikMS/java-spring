@@ -1,7 +1,11 @@
 package com.fk.notification.domain;
+import java.io.Serializable;
 import java.util.Date;
+
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.TextIndexed;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import lombok.AllArgsConstructor;
@@ -17,13 +21,18 @@ import lombok.ToString;
 @Setter
 @AllArgsConstructor
 @Builder
-public class Notification {
+@ToString
+public class Notification implements Serializable {
   @Id
   private String id;
   private String userId;
   private String title;
   private String message;
-  private Date createdAt;
-  private Date updatedAt;
   private Boolean read;
+  @CreatedDate
+  private Date createdAt;
+  @LastModifiedDate
+  private Date updatedAt;
+  @Version
+  private Integer version;
 }
