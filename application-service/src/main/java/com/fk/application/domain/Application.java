@@ -42,8 +42,7 @@ public class Application {
   private String description;
 
   @ElementCollection(fetch = FetchType.EAGER)
-  @CollectionTable(name = "configuration", joinColumns = @JoinColumn(name = "application_id", nullable = false), uniqueConstraints = @UniqueConstraint(columnNames = {
-      "application_id" }))
+  @CollectionTable(name = "configuration", joinColumns = @JoinColumn(name = "application_id", nullable = false))
   private Set<RouteConfiguration> routeConfigurations = new HashSet<>();
 
   @JsonIgnore

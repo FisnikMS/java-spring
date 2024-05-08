@@ -37,7 +37,6 @@ import com.fk.notification.domain.records.UpdateNotificationRecord;
 import com.fk.notification.exception.EntityNotFoundException;
 import com.fk.notification.config.rabbitMQ.RabbitConfiguration;
 import com.fk.notification.repository.NotificationRepository;
-import com.fk.notification.config.rabbitMQ.domain.NotificationCreationEvent;
 
 @Service
 public class NotificationService {
@@ -61,19 +60,6 @@ public class NotificationService {
     this.taskScheduler = taskScheduler;
     this.toggleScheduledTask(true);
     emitters = new HashMap<>();
-  }
-
-  @RabbitListener(queues = RabbitConfiguration.queueName)
-  private void receiveNotifications(NotificationCreationEvent event) {
-    event.getUserIds().stream().forEach(userId -> {
-      this.insert(Notification
-          .builder()
-          .userId(userId)
-          .title(event.getTitle())
-          .message(event.getMessage())
-          .read(false)
-          .build());
-    });
   }
 
   private void health() {

@@ -1,4 +1,4 @@
-package com.fk.notification.config.rabbitMQ.domain;
+package com.fk.application.config.rabbitMQ.domain;
 
 import java.io.Serializable;
 import java.util.List;
@@ -9,13 +9,12 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-
-@Setter
 @Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class NotificationCreationEvent implements Serializable{
+public class NotificationEvent extends Event {
   private List<String> userIds;
   private String title;
   private String message;

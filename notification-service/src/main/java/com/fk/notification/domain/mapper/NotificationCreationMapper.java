@@ -20,8 +20,6 @@ public class NotificationCreationMapper implements Function<CreateNotificationRe
         .message(t.message())
         .title(t.title())
         .read(Boolean.valueOf(Boolean.FALSE))
-        .createdAt(new Date())
-        .updatedAt(new Date())
         .build();
   }
 }

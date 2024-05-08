@@ -10,7 +10,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import com.fk.application.config.rabbitMQ.RabbitConfiguration;
-import com.fk.application.config.rabbitMQ.domain.NotificationCreationEvent;
+import com.fk.application.config.rabbitMQ.domain.Event;
+import com.fk.application.config.rabbitMQ.domain.EventType;
+import com.fk.application.config.rabbitMQ.domain.NotificationEvent;
+import com.fk.application.config.rabbitMQ.domain.NotificationUpdateEvent;
 import com.fk.application.domain.Application;
 import com.fk.application.domain.UpdateApplication;
 import com.fk.application.domain.mapper.UpdateApplicationMapper;
@@ -32,9 +35,9 @@ public class ApplicationService {
     this.rabbitTemplate = rabbitTemplate;
   }
 
-  private void notifyUser(NotificationCreationEvent notificationCreationEvent) {
+  private void notifyUser(Event event) {
     rabbitTemplate.convertAndSend(RabbitConfiguration.topicExchangeName, RabbitConfiguration.routingKey,
-        notificationCreationEvent);
+        event);
   }
 
   public List<Application> getAll() {
@@ -59,14 +62,16 @@ public class ApplicationService {
     this.applicationRepository.deleteById(appId);
 
     if (!application.get().getInstallations().isEmpty()) {
-      this.notifyUser(NotificationCreationEvent
+      Event event = NotificationEvent
           .builder()
           .title("Application " + application.get().getTitle() + " has been deleted.")
           .message("You've received this message because you installed this application.")
           .userIds(application.get().getInstallations().stream().map(notification -> notification.getUserId())
               .collect(Collectors.toList()))
-          .build()
-      );
+          .build();
+
+      event.setEventType(EventType.Deletion);
+      this.notifyUser(event);
     }
 
     return ResponseEntity.ok().build();
@@ -75,7 +80,17 @@ public class ApplicationService {
   public Application update(UpdateApplication application) {
     Optional<Application> appToUpdate = this.applicationRepository.findById(application.id());
     if (appToUpdate.isPresent()) {
-      return applicationRepository.save(new UpdateApplicationMapper(appToUpdate.get()).apply(application));
+      Application updatedApp = applicationRepository
+          .save(new UpdateApplicationMapper(appToUpdate.get()).apply(application));
+      Event event = NotificationUpdateEvent
+          .builder()
+          .oldData(appToUpdate.get())
+          .updatedData(updatedApp)
+          .build();
+
+      event.setEventType(EventType.Update);
+      this.notifyUser(event);
+      return updatedApp;
     }
     throw new EntityNotFoundException("Couldn't find application with id: " + application.id());
   }

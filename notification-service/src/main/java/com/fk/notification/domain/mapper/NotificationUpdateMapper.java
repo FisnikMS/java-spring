@@ -26,8 +26,6 @@ public class NotificationUpdateMapper implements Function<UpdateNotificationReco
         .message(t.message() != null ? t.message() : notification.getMessage())
         .title(t.title() != null ? t.title() : notification.getTitle())
         .read(t.read() != null ? t.read() : notification.getRead())
-        .createdAt(notification.getCreatedAt())
-        .updatedAt(new Date())
         .build();
   }
 
