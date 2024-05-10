@@ -4,10 +4,17 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
+
+@Getter
+@Setter
+@ToString
 public class Difference {
-  ArrayList<Evaluation> evaluation = new ArrayList<>();
-  Object oldValue;
-  Object newValue;
+  private ArrayList<Evaluation> evaluation = new ArrayList<>();
+  private Object oldValue;
+  private Object newValue;
 
   public Difference(Evaluation evaluation, Object oldValue, Object newValue) {
     this.evaluation.add(evaluation);
@@ -24,13 +31,6 @@ public class Difference {
   public Difference addEvaluation(Evaluation eval){
     this.evaluation.add(eval);
     return this;
-  }
-
-  @Override
-  public String toString() {
-    return "\nevaluation: " + Arrays.toString(evaluation.toArray()) + "\n"
-        + "oldValue: " + oldValue + "\n"
-        + "newValue: " + newValue;
   }
 
 }

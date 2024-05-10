@@ -19,7 +19,7 @@ public class NotificationUpdateMapper implements Function<UpdateNotificationReco
   }
 
   public Notification apply(UpdateNotificationRecord t) {
-    return new Notification()
+    return Notification
         .builder()
         .id(t.id())
         .userId(t.userId() != null ? t.userId() : notification.getUserId())

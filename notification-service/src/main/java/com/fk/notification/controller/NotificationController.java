@@ -18,7 +18,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
-import com.fk.notification.NotificationApplication;
 import com.fk.notification.domain.Notification;
 import com.fk.notification.domain.mapper.NotificationCreationMapper;
 import com.fk.notification.domain.records.CreateNotificationRecord;
@@ -43,11 +42,6 @@ public class NotificationController {
   @GetMapping(path = "/subscribe/{userId}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
   public SseEmitter sse(@PathVariable("userId") String userId) {
     return notificationService.sse(userId);
-  }
-
-  @GetMapping("/{userId}")
-  public List<Notification> getNotificationsById(@PathVariable("userId") String userId) {
-    return this.notificationService.getNotificationsById(userId);
   }
 
   @GetMapping()

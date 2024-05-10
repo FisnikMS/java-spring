@@ -1,6 +1,8 @@
 package com.fk.application.domain;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -23,10 +25,12 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
+@ToString
 @Getter
 @Setter
 @Builder
@@ -43,10 +47,10 @@ public class Application {
 
   @ElementCollection(fetch = FetchType.EAGER)
   @CollectionTable(name = "configuration", joinColumns = @JoinColumn(name = "application_id", nullable = false))
-  private Set<RouteConfiguration> routeConfigurations = new HashSet<>();
+  private List<RouteConfiguration> routeConfigurations = new ArrayList<>();
 
   @JsonIgnore
-  @OneToMany(mappedBy = "application", fetch = FetchType.EAGER , cascade = CascadeType.ALL)
+  @OneToMany(mappedBy = "application", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
   private Set<Installation> installations = new HashSet<>();
 
 }

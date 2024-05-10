@@ -1,5 +1,8 @@
 package com.fk.notification.utils;
 
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.temporal.ChronoField;
 import java.util.HashMap;
 
 import com.fk.notification.domain.rules.Difference;
@@ -30,5 +33,22 @@ public class Helper {
     return map;
 
   }
+
+  public static DateTimeFormatter createDateTimeFormatter(long defaultHourOfDay, long defaultOffsetSeconds) {
+    return new DateTimeFormatterBuilder()
+        .append(DateTimeFormatter.ISO_LOCAL_DATE)
+        .optionalStart()
+        .parseCaseInsensitive()
+        .appendPattern("[ ]['T']")
+        .append(DateTimeFormatter.ISO_LOCAL_TIME)
+        .optionalEnd()
+        .appendPattern("[xx]")
+        .parseDefaulting(ChronoField.HOUR_OF_DAY, defaultHourOfDay)
+        .parseDefaulting(ChronoField.OFFSET_SECONDS, defaultOffsetSeconds)
+        .toFormatter();
+
+  }
+
+
 
 }

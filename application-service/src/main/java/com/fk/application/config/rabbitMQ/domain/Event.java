@@ -11,6 +11,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public abstract class Event implements Serializable {
+  private String topic;
   private EventType eventType;
 }
 

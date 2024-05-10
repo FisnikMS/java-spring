@@ -37,6 +37,7 @@ import com.fk.notification.domain.records.UpdateNotificationRecord;
 import com.fk.notification.exception.EntityNotFoundException;
 import com.fk.notification.config.rabbitMQ.RabbitConfiguration;
 import com.fk.notification.repository.NotificationRepository;
+import com.fk.notification.utils.Helper;
 
 @Service
 public class NotificationService {
@@ -125,29 +126,10 @@ public class NotificationService {
     throw new EntityNotFoundException("Couldn't find notification with id: " + updateNotification.id());
   }
 
-  public List<Notification> getNotificationsById(String userId) {
-    return notificationRepository.getNotificationsById(userId);
-  }
-
   public List<Notification> deleteNotificationsById(List<String> ids) {
     List<Notification> notifications = notificationRepository.findAllById(ids);
     notificationRepository.deleteAllById(ids);
     return notifications;
-  }
-
-  private DateTimeFormatter createDateTimeFormatter(long defaultHourOfDay, long defaultOffsetSeconds) {
-    return new DateTimeFormatterBuilder()
-        .append(DateTimeFormatter.ISO_LOCAL_DATE)
-        .optionalStart()
-        .parseCaseInsensitive()
-        .appendPattern("[ ]['T']")
-        .append(DateTimeFormatter.ISO_LOCAL_TIME)
-        .optionalEnd()
-        .appendPattern("[xx]")
-        .parseDefaulting(ChronoField.HOUR_OF_DAY, defaultHourOfDay)
-        .parseDefaulting(ChronoField.OFFSET_SECONDS, defaultOffsetSeconds)
-        .toFormatter();
-
   }
 
   public Page<Notification> getAll(
@@ -160,7 +142,7 @@ public class NotificationService {
     Pageable pageable = PageRequest.of(page, size);
     Query query = new Query().with(pageable);
     List<Criteria> criteria = new ArrayList<>();
-    DateTimeFormatter formatter = createDateTimeFormatter(0, 0);
+    DateTimeFormatter formatter = Helper.createDateTimeFormatter(0, 0);
 
     userId.ifPresent(u -> {
       criteria.add(Criteria.where("userId").is(u));
@@ -177,7 +159,7 @@ public class NotificationService {
     });
 
     endDate.ifPresent(ed -> {
-      DateTimeFormatter endFormatter = createDateTimeFormatter(23, 60);
+      DateTimeFormatter endFormatter = Helper.createDateTimeFormatter(23, 60);
       Instant end = OffsetDateTime.parse(ed, endFormatter).toInstant();
       Criteria endDateCriteria = Criteria.where("createdAt").lte(end);
       criteria.add(endDateCriteria);

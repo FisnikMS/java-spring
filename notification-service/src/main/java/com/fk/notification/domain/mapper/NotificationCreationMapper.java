@@ -14,7 +14,7 @@ public class NotificationCreationMapper implements Function<CreateNotificationRe
 
   @Override
   public Notification apply(CreateNotificationRecord t) {
-    return new Notification()
+    return Notification
         .builder()
         .userId(t.userId())
         .message(t.message())

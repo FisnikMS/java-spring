@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.fk.notification.domain.Notification;
 import com.fk.notification.service.NotificationService;
+import com.fk.notification.service.TemplateService;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,7 +22,7 @@ public class NotificationEvent extends Event {
   private String message;
 
   @Override
-  public void handle(NotificationService notificationService) {
+  public void handle(NotificationService notificationService, TemplateService templateService) {
     userIds.stream().forEach(userId -> {
       notificationService.insert(Notification
           .builder()

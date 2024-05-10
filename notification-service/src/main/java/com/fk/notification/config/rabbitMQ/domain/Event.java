@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fk.notification.config.rabbitMQ.domain.EventType;
 import com.fk.notification.service.NotificationService;
+import com.fk.notification.service.TemplateService;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -23,6 +24,6 @@ import lombok.Setter;
 })
 public abstract class Event implements Serializable {
   private EventType eventType;
-  public abstract void handle(NotificationService notificationService);
+  public abstract void handle(NotificationService notificationService,TemplateService templateService);
 }
 

@@ -6,6 +6,7 @@ import java.util.LinkedHashMap;
 import com.fk.notification.domain.rules.ComparisonWrapper;
 import com.fk.notification.domain.rules.Difference;
 import com.fk.notification.service.NotificationService;
+import com.fk.notification.service.TemplateService;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,16 +21,19 @@ import lombok.ToString;
 @ToString
 
 public class NotificationUpdateEvent extends Event {
+  private String topic;
   private LinkedHashMap<String, Object> oldData;
   private LinkedHashMap<String, Object> updatedData;
 
   @Override
-  public void handle(NotificationService notificationService) {
+  public void handle(NotificationService notificationService, TemplateService TemplateService) {
     try {
       LinkedHashMap<String, Difference> result = new ComparisonWrapper(oldData).compare(updatedData);
       System.out.println(Arrays.toString(result.entrySet().toArray()));
-      // @TODO: MongoDB aggregation to get the ids of the users that subscribed to the
-      // evaluated changes.
+      if(result.size() != 0){
+        TemplateService.getAllByRules(topic, oldData, updatedData, result);
+      }
+      // @TODO: Notify users 
     } catch (Exception e) {
       // TODO: handle exception
     }
