@@ -74,7 +74,8 @@ public class NotificationService {
   }
 
   private void removeEmitter(String key) {
-    emitters.remove(key);
+    SseEmitter emitter = emitters.remove(key);
+    emitter.complete();
     if (emitters.keySet().isEmpty()) {
       toggleScheduledTask(false);
     }
