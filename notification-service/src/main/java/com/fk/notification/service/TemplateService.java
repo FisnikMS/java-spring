@@ -110,7 +110,7 @@ public class TemplateService {
         () -> mongoTemplate.count(query.skip(0).limit(0), Template.class));
   }
 
-  public HashSet<Template> getAllByRules(String topic, LinkedHashMap<String, Object> oldData,
+  public List<Template> getAllByRules(String topic, LinkedHashMap<String, Object> oldData,
       LinkedHashMap<String, Object> updatedData, LinkedHashMap<String, Difference> result) {
 
     List<Criteria> ruleCriterias = result.entrySet().stream().map(entry -> {

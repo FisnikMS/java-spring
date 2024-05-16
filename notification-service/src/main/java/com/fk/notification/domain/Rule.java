@@ -5,9 +5,7 @@ import java.util.Set;
 
 import org.springframework.data.mongodb.core.index.TextIndexed;
 
-import com.fk.notification.domain.rules.Evaluation;
 
-import jakarta.persistence.Embeddable;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -21,7 +19,6 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-@Embeddable
 public class Rule {
   @TextIndexed
   private String field;

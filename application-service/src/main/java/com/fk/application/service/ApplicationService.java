@@ -81,9 +81,6 @@ public class ApplicationService {
   public Application update(UpdateApplication application) {
     Optional<Application> appToUpdate = this.applicationRepository.findById(application.id());
 
-    System.out.println("APPTOUPDATE");
-    System.out.println(appToUpdate.get());
-
     if (appToUpdate.isPresent()) {
       Application updatedApp = applicationRepository
           .save(new UpdateApplicationMapper(appToUpdate.get()).apply(application));

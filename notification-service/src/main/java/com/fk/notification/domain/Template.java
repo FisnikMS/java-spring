@@ -10,10 +10,6 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.annotation.Version;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import jakarta.persistence.CollectionTable;
-import jakarta.persistence.ElementCollection;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -35,9 +31,6 @@ public class Template {
   private String title;
   private String message;
   private String topic;
-
-  @ElementCollection(fetch = FetchType.EAGER)
-  @CollectionTable(name = "rule", joinColumns = @JoinColumn(name = "template_id", nullable = false))
   private Set<Rule> rules = new HashSet<>();
 
   @CreatedDate
