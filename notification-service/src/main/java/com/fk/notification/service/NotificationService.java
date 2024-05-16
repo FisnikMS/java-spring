@@ -5,17 +5,13 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
-import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ScheduledFuture;
 
-import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -24,18 +20,14 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.scheduling.TaskScheduler;
-import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.support.PeriodicTrigger;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
-import org.springframework.web.servlet.mvc.method.annotation.SseEmitter.SseEventBuilder;
 
-import com.fk.notification.NotificationApplication;
 import com.fk.notification.domain.Notification;
 import com.fk.notification.domain.mapper.NotificationUpdateMapper;
 import com.fk.notification.domain.records.UpdateNotificationRecord;
 import com.fk.notification.exception.EntityNotFoundException;
-import com.fk.notification.config.rabbitMQ.RabbitConfiguration;
 import com.fk.notification.repository.NotificationRepository;
 import com.fk.notification.utils.Helper;
 
@@ -59,7 +51,7 @@ public class NotificationService {
     this.notificationRepository = notificationRepository;
     this.mongoTemplate = mongoTemplate;
     this.taskScheduler = taskScheduler;
-    this.toggleScheduledTask(true);
+    this.toggleScheduledTask(false);
     emitters = new HashMap<>();
   }
 
@@ -85,7 +77,7 @@ public class NotificationService {
     if (enable && (scheduledFuture == null || scheduledFuture.isCancelled())) {
       scheduledFuture = taskScheduler.schedule(this::health,
           new PeriodicTrigger(Duration.ofMillis(1000 * 60 * 5)));
-    } else if (!enable && scheduledFuture != null && !scheduledFuture.isCancelled()) {
+    } else if (!enable && (scheduledFuture != null && !scheduledFuture.isCancelled())) {
       scheduledFuture.cancel(true);
     }
   }
@@ -93,14 +85,14 @@ public class NotificationService {
   public SseEmitter sse(String userId) {
     SseEmitter emitter = new SseEmitter(Long.MAX_VALUE);
     emitters.put(userId, emitter);
-
+    toggleScheduledTask(true);
+   
     emitter.onTimeout(() -> {
       removeEmitter(userId);
     });
     emitter.onCompletion(() -> {
       removeEmitter(userId);
     });
-    toggleScheduledTask(true);
     return emitter;
   }
 
